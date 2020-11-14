@@ -8,6 +8,11 @@ def main():
     parser = argparse.ArgumentParser(description='Args')
 
     parser.add_argument(
+        'conf',
+        help='openvpn conf file'
+    )
+
+    parser.add_argument(
         '-R',
         '--remove-route',
         action='store_const',
@@ -26,7 +31,7 @@ def main():
     default_net_addr = '128.129.0'
     is_default_net = False
     while not is_default_net:
-        openvpn = subprocess.Popen(['openvpn', '/etc/openvpn/openvpn_client_internal.conf'], stdout=subprocess.PIPE)
+        openvpn = subprocess.Popen(['openvpn', args.conf], stdout=subprocess.PIPE)
         route_list = []
         try:
             while openvpn.poll() == None:
