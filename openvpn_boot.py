@@ -4,28 +4,28 @@ import subprocess
 import argparse
 import re
 
-def main():
-    parser = argparse.ArgumentParser(description='Args')
-
-    parser.add_argument(
-        'conf',
-        help='openvpn conf file'
-    )
-
-    parser.add_argument(
-        '-R',
-        '--remove-route',
-        action='store_const',
-        const=True,
-        default=False,
-        help='remove route'
-    )
-
-    args = parser.parse_args()
-
+def running_openvpn():
     ps = subprocess.run(['ps', '-A'], capture_output=True)
-    if re.search('openvpn', str(ps.stdout)) is not None:
-        print('openvpn is running')
+    output = ps.stdout.decode('utf-8')
+    m = re.findall('^ *([^ ]+).*openvpn$', output, re.M)
+    if len(m) == 0:
+        return None
+    else:
+        return m[0]
+
+
+def stop(args):
+    pid = running_openvpn()
+    if pid is None:
+        print('openvpn is not running')
+        return
+    print('kill ', pid)
+    subprocess.run(['kill', pid])
+
+
+def start(args):
+    if running_openvpn() is not None:
+        print("openvpn is running")
         return
 
     default_net_addr = '128.129.0'
@@ -66,6 +66,39 @@ def main():
         except Exception:
             openvpn.kill()
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Args')
+
+    sub_parsers = parser.add_subparsers(help='sub command')
+    
+    start_cmd = sub_parsers.add_parser('start', help='start')
+    start_cmd.add_argument(
+        'conf',
+        help='openvpn conf file'
+    )
+
+    start_cmd.add_argument(
+        '-R',
+        '--remove-route',
+        action='store_const',
+        const=True,
+        default=False,
+        help='remove route'
+    )
+    start_cmd.set_defaults(func=start)
+
+    stop_cmd = sub_parsers.add_parser('stop', help='stop')
+    stop_cmd.set_defaults(func=stop)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+def main():
+    parse_args()
+
+    
     
 if __name__ == '__main__':
     main()
