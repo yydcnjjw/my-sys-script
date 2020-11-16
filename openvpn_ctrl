@@ -66,10 +66,8 @@ def start(args):
         except Exception:
             openvpn.kill()
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Args')
-
     sub_parsers = parser.add_subparsers(help='sub command')
     
     start_cmd = sub_parsers.add_parser('start', help='start')
@@ -92,7 +90,10 @@ def parse_args():
     stop_cmd.set_defaults(func=stop)
 
     args = parser.parse_args()
-    args.func(args)
+    if args.__contains__('func'):
+        args.func(args)
+    else:
+        parser.print_help()
 
 
 def main():
