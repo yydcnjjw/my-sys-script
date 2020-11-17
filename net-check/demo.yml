@@ -1,0 +1,12 @@
+-
+  addr: '127.0.0.1:8119'
+  failure_cmd: |
+    echo 'failure'
+    echo 'failure'
+  timeout: 3
+-
+  addr: '127.0.0.1:8118'
+  success_cmd: |
+    echo 'success'
+    echo 'success'
+  timeout: 3
