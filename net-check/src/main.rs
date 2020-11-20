@@ -4,7 +4,6 @@ use run_script::ScriptOptions;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::net::SocketAddr;
-use std::process::Command;
 use thiserror::Error;
 use tokio::net::TcpSocket;
 use tokio::time::{self, timeout, Duration};
@@ -52,10 +51,12 @@ async fn exec_cmd(cmd: &String) -> Result<()> {
     let options = ScriptOptions::new();
     let args = vec![];
 
-    let (code, output, error) = run_script::run(cmd, &args, &options).unwrap();
-    println!("Exit Code: {}", code);
-    println!("Output: {}", output);
-    println!("Error: {}", error);
+    let (exit_code, _, err) = run_script::run(cmd, &args, &options).unwrap();
+
+    if exit_code != 0 {
+        log::warn!("{}", err);
+    }
+    
     Ok(())
 }
 
@@ -66,14 +67,11 @@ fn exec_policy<'a>(policies: &'a Vec<Policy>) -> BoxFuture<'a, Result<()>> {
                 .addr
                 .parse::<SocketAddr>()
                 .map_err(|e| Error::PolicyParse(e.to_string()))?;
-            println!("{:?}", addr);
+
             let socket = TcpSocket::new_v4().map_err(|e| Error::PolicyParse(e.to_string()))?;
             match timeout(Duration::from_secs(policy.timeout), socket.connect(addr)).await {
                 Ok(v) => match v {
-                    Ok(s) => {
-                        println!("{:?}", s);
-                        println!("sub_policy: {:?}", policy.sub_policy);
-
+                    Ok(_s) => {
                         exec_cmd(&policy.success_cmd).await?;
                         exec_policy(&policy.sub_policy).await?
                     }
